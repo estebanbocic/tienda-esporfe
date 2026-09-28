@@ -1,0 +1,235 @@
+---
+import type { GetStaticPaths } from "astro";
+import { formatCLP, products, type CatalogProduct } from "../../data/products";
+import MiniCart from "../../components/MiniCart.astro";
+
+export const getStaticPaths = (() =>
+	products.map((product) => ({
+		params: { sku: product.sku },
+		props: { product },
+	}))) satisfies GetStaticPaths;
+
+type Props = {
+	product: CatalogProduct;
+};
+
+const { product } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es-CL">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="description" content={`${product.title}. Disponible en Es Por Fé por ${formatCLP(product.price)}.`} />
+		<meta name="theme-color" content="#f7f2e9" />
+		<link rel="icon" type="image/png" href="/brand/favicon-esporfe.png" />
+		<title>{product.title} | Es Por Fé</title>
+	</head>
+	<body>
+		<a class="skip-link" href="#producto">Ir al producto</a>
+
+		<div class="announcement">Productos con propósito · Despachos en Chile</div>
+
+		<header>
+			<a class="brand" href="/" aria-label="Es Por Fé, inicio">
+				<img class="brand-logo" src="/brand/logo-esporfe-transparent.png" alt="" width="1133" height="473" />
+			</a>
+			<div class="header-actions">
+				<a class="back-link" href="/#catalogo"><span aria-hidden="true">←</span> Volver a productos</a>
+				<a class="cart-link" href="/carro/" data-cart-link aria-label="Abrir carro, 0 productos">Carro <span data-cart-count>0</span></a>
+			</div>
+		</header>
+
+		<main id="producto">
+			<nav class="breadcrumb" aria-label="Migas de pan">
+				<a href="/">Inicio</a>
+				<span aria-hidden="true">/</span>
+				<a href="/#catalogo">Productos</a>
+				<span aria-hidden="true">/</span>
+				<span aria-current="page">{product.sku}</span>
+			</nav>
+
+			<section class="product-detail">
+				<div class="gallery">
+					<img src={product.image} alt={product.title} width="1200" height="1200" />
+				</div>
+
+				<div class="product-copy">
+					<p class="eyebrow">{product.category}</p>
+					<h1>{product.title}</h1>
+					<p class="sku">SKU {product.sku}</p>
+					<p class="price">{formatCLP(product.price)}</p>
+
+					<div class="availability">
+						<span class="availability-dot" aria-hidden="true"></span>
+						<strong>Disponible</strong>
+						<span>{product.stock === 1 ? "1 unidad" : `${product.stock} unidades`} en stock</span>
+					</div>
+
+					<div class="quantity-row">
+						<label for="quantity">Cantidad</label>
+						<input id="quantity" type="number" min="1" max={product.stock} value="1" inputmode="numeric" />
+					</div>
+
+					<button class="primary-button" type="button" data-add-to-cart data-sku={product.sku}>
+						Agregar al carro
+					</button>
+					<p class="cart-status" data-cart-status role="status" aria-live="polite"></p>
+
+					<ul class="trust-list">
+						<li>Precio con IVA incluido</li>
+						<li>Despachos dentro de Chile</li>
+						<li>Stock informado por Es Por Fé</li>
+					</ul>
+				</div>
+			</section>
+		</main>
+
+		<footer>
+			<a class="footer-logo" href="/" aria-label="Es Por Fé, inicio">
+				<img src="/brand/logo-esporfe-transparent.png" alt="" width="1133" height="473" loading="lazy" />
+			</a>
+			<a href="https://www.instagram.com/esporfetienda/" target="_blank" rel="noreferrer">@esporfetienda</a>
+		</footer>
+		<MiniCart />
+	</body>
+</html>
+
+<style>
+	:global(:root) {
+		--ink: #351c31;
+		--ink-soft: #66505f;
+		--cream: #f7f2e9;
+		--paper: #fffdf8;
+		--terracotta: #c000a2;
+		--gold: #ef8edb;
+		--line: rgba(53, 28, 49, 0.18);
+		font-family: Inter, Avenir, "Segoe UI", sans-serif;
+		color: var(--ink);
+		background: var(--cream);
+	}
+
+	:global(*) { box-sizing: border-box; }
+	:global(body) { margin: 0; background: var(--cream); }
+	:global(a) { color: inherit; }
+
+	.skip-link {
+		position: fixed; top: 0.75rem; left: 0.75rem; z-index: 20; padding: 0.75rem 1rem;
+		background: var(--ink); color: white; transform: translateY(-160%);
+	}
+	.skip-link:focus { transform: translateY(0); }
+	.announcement {
+		padding: 0.55rem 1.25rem; background: var(--ink); color: white;
+		text-align: center; font-size: 0.74rem; letter-spacing: 0.09em; text-transform: uppercase;
+	}
+	header {
+		width: min(calc(100% - 2.5rem), 1240px); min-height: 84px; margin: 0 auto;
+		display: flex; align-items: center; justify-content: space-between; gap: 2rem;
+		border-bottom: 1px solid var(--line);
+	}
+	.brand {
+		display: inline-flex; align-items: center; text-decoration: none;
+	}
+	.brand-logo { width: auto; height: 2.5rem; display: block; }
+	.back-link { font-size: 0.78rem; font-weight: 800; text-underline-offset: 0.3em; }
+	.header-actions { display: flex; align-items: center; gap: 1.5rem; }
+	.cart-link { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 800; text-decoration: none; }
+	.cart-link span { width: 1.5rem; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: var(--terracotta); color: white; font-size: 0.68rem; }
+	main { width: min(calc(100% - 2.5rem), 1240px); margin: 0 auto; }
+	.breadcrumb {
+		display: flex; gap: 0.65rem; align-items: center; padding: 1.5rem 0;
+		color: var(--ink-soft); font-size: 0.72rem;
+	}
+	.breadcrumb a { text-underline-offset: 0.25em; }
+	.product-detail {
+		display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+		gap: clamp(3rem, 8vw, 7rem); align-items: start; padding: 1.5rem 0 7rem;
+	}
+	.gallery {
+		min-height: 580px; display: grid; place-items: center; padding: clamp(1.5rem, 5vw, 4rem);
+		background: #eee7dc;
+	}
+	.gallery img { width: 100%; max-height: 600px; display: block; object-fit: contain; }
+	.product-copy { padding-top: 2rem; }
+	.eyebrow {
+		margin: 0 0 1rem; color: var(--terracotta); font-size: 0.7rem;
+		font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+	}
+	h1 {
+		margin: 0 0 0.75rem; font-family: Georgia, serif; font-size: clamp(2.4rem, 5vw, 4.4rem);
+		font-weight: 500; line-height: 1.02; letter-spacing: -0.035em;
+	}
+	.sku { margin: 0 0 2rem; color: var(--ink-soft); font-size: 0.7rem; letter-spacing: 0.08em; }
+	.price { margin: 0 0 1.5rem; font-size: 1.6rem; font-weight: 800; }
+	.availability {
+		display: flex; align-items: center; gap: 0.6rem; padding: 1rem 0;
+		border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 0.82rem;
+	}
+	.availability span:last-child { margin-left: auto; color: var(--ink-soft); }
+	.availability-dot { width: 0.55rem; aspect-ratio: 1; border-radius: 50%; background: #438665; }
+	.quantity-row { display: flex; align-items: center; justify-content: space-between; margin: 1.5rem 0; font-size: 0.82rem; font-weight: 800; }
+	.quantity-row input { width: 4.5rem; min-height: 42px; padding: 0.5rem; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; text-align: center; }
+	.primary-button {
+		width: 100%; border: 0; display: flex; min-height: 56px; align-items: center; justify-content: center; gap: 0.5rem;
+		padding: 0.8rem 1.4rem; background: var(--ink); color: white; box-shadow: 5px 5px 0 var(--gold);
+		font-size: 0.82rem; font-weight: 800; text-decoration: none; cursor: pointer;
+	}
+	.primary-button:disabled { cursor: wait; opacity: 0.65; }
+	.cart-status { min-height: 1.3rem; margin: 0.8rem 0 0; color: var(--ink-soft); font-size: 0.78rem; }
+	.trust-list { margin: 2rem 0 0; padding: 0; display: grid; gap: 0.7rem; list-style: none; }
+	.trust-list li { color: var(--ink-soft); font-size: 0.78rem; }
+	.trust-list li::before { content: "✓"; margin-right: 0.65rem; color: var(--terracotta); font-weight: 800; }
+	footer {
+		min-height: 120px; display: flex; align-items: center; justify-content: space-between;
+		padding: 2rem max(1.25rem, calc((100% - 1240px) / 2)); background: var(--ink); color: white;
+		font-family: Georgia, serif;
+	}
+	footer a { font-family: Inter, sans-serif; font-size: 0.78rem; font-weight: 700; }
+	.footer-logo img { width: clamp(8.5rem, 13vw, 10.5rem); height: auto; display: block; }
+
+	@media (max-width: 800px) {
+		.product-detail { grid-template-columns: 1fr; gap: 1rem; }
+		.gallery { min-height: 420px; }
+		.product-copy { padding-top: 1.5rem; }
+	}
+	@media (max-width: 520px) {
+		header, main { width: min(calc(100% - 1.5rem), 1240px); }
+		header { min-height: 74px; }
+		.brand-logo { width: auto; height: 2.15rem; }
+		.back-link { font-size: 0; }
+		.back-link span { font-size: 1.2rem; }
+		.gallery { min-height: 330px; padding: 1.25rem; }
+		.product-detail { padding-bottom: 4rem; }
+		.availability { flex-wrap: wrap; }
+		.availability span:last-child { width: 100%; margin-left: 1.15rem; }
+		footer { flex-direction: column; justify-content: center; gap: 1rem; }
+	}
+</style>
+
+<script>
+	import { addSkuToCart, initializeCartCount } from "../../lib/cart-client";
+
+	initializeCartCount();
+
+	const button = document.querySelector<HTMLButtonElement>("[data-add-to-cart]");
+	const quantity = document.querySelector<HTMLInputElement>("#quantity");
+	const status = document.querySelector<HTMLElement>("[data-cart-status]");
+
+	button?.addEventListener("click", async () => {
+		button.disabled = true;
+		button.textContent = "Agregando…";
+		if (status) status.textContent = "";
+
+		try {
+			await addSkuToCart(button.dataset.sku ?? "", Number(quantity?.value ?? 1));
+			button.textContent = "Agregado al carro ✓";
+			if (status) status.innerHTML = '<a href="/carro/">Ver carro y continuar la compra →</a>';
+		} catch (error) {
+			button.textContent = "Agregar al carro";
+			if (status) status.textContent = error instanceof Error ? error.message : "No pudimos agregar el producto.";
+		} finally {
+			button.disabled = false;
+		}
+	});
+</script>

@@ -1,0 +1,17 @@
+# Dependencies and build output
+node_modules/
+dist/
+.astro/
+.medusa/
+.turbo/
+
+# Environment and local files
+.env
+.env.*
+!.env.example
+!.env.template
+*.log
+.DS_Store
+
+# Editors
+.idea/

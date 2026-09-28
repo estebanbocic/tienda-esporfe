@@ -1,0 +1,20 @@
+{
+  "name": "es-por-fe",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ecommerce de Es Por Fé: Medusa backend y Astro storefront.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+	"db:up": "docker compose up -d postgres",
+	"db:down": "docker compose down",
+	"db:logs": "docker compose logs -f postgres",
+    "dev:backend": "npm --prefix apps/backend run backend:dev",
+    "dev:storefront": "npm --prefix apps/storefront run dev",
+    "build": "npm run build:backend && npm run build:storefront",
+    "build:backend": "npm --prefix apps/backend run build",
+    "build:storefront": "npm --prefix apps/storefront run build",
+    "lint:backend": "npm --prefix apps/backend run lint"
+  }
+}

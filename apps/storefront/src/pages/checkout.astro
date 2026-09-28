@@ -1,0 +1,131 @@
+---
+---
+
+<!doctype html>
+<html lang="es-CL">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="description" content="Checkout de Es Por Fé." />
+		<link rel="icon" type="image/png" href="/brand/favicon-esporfe.png" />
+		<title>Finalizar compra | Es Por Fé</title>
+	</head>
+	<body>
+		<header>
+			<a href="/" aria-label="Es Por Fé, inicio"><img src="/brand/logo-esporfe-transparent.png" alt="" width="1133" height="473" /></a>
+			<a href="/carro/">← Volver al carro</a>
+		</header>
+		<main>
+			<section class="checkout">
+				<p class="eyebrow">Último paso</p>
+				<h1>Datos de entrega</h1>
+				<form data-checkout-form>
+					<div class="two-columns">
+						<label>Nombre <input name="first_name" autocomplete="given-name" required /></label>
+						<label>Apellido <input name="last_name" autocomplete="family-name" required /></label>
+					</div>
+					<label>Correo electrónico <input name="email" type="email" autocomplete="email" required /></label>
+					<label>Teléfono <input name="phone" type="tel" autocomplete="tel" required /></label>
+					<label>Dirección <input name="address_1" autocomplete="street-address" required /></label>
+					<div class="two-columns">
+						<label>Región <select name="province" data-region required><option value="">Selecciona una región</option></select></label>
+						<label>Comuna <select name="city" data-commune required disabled><option value="">Selecciona una comuna</option></select></label>
+					</div>
+					<label>Código postal <input name="postal_code" autocomplete="postal-code" /></label>
+					<div class="payment-note">
+						<strong>Pago seguro con Mercado Pago</strong>
+						<span>Al continuar irás a Mercado Pago para elegir tarjeta, débito u otro medio disponible. Volverás a Es Por Fé al terminar.</span>
+					</div>
+					<button type="submit">Ir a pagar</button>
+					<p class="status" data-status role="status" aria-live="polite"></p>
+				</form>
+			</section>
+			<aside data-summary>
+				<h2>Tu pedido</h2>
+				<div data-summary-items></div>
+				<div class="total"><span>Total</span><strong data-summary-total>$0</strong></div>
+				<p>El despacho se agregará según la región ingresada.</p>
+			</aside>
+		</main>
+	</body>
+</html>
+
+<style>
+	:global(:root){--ink:#351c31;--ink-soft:#66505f;--cream:#f7f2e9;--paper:#fffdf8;--pink:#c000a2;--gold:#ef8edb;--line:rgba(53,28,49,.18);font-family:Inter,Avenir,"Segoe UI",sans-serif;color:var(--ink);background:var(--cream)}
+	:global(*){box-sizing:border-box}:global(body){margin:0}:global(a){color:inherit}
+	header,main{width:min(calc(100% - 2.5rem),1080px);margin:0 auto}header{min-height:84px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}header img{width:auto;height:2.5rem;display:block}header>a:last-child{font-size:.78rem;font-weight:800;text-underline-offset:.3em}
+	main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:clamp(2rem,7vw,6rem);align-items:start;padding:clamp(3rem,7vw,6rem) 0 7rem}.eyebrow{margin:0 0 .8rem;color:var(--pink);font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1,h2{font-family:Georgia,serif;font-weight:500}h1{margin:0 0 2rem;font-size:clamp(2.7rem,5vw,4.7rem);letter-spacing:-.04em}form{display:grid;gap:1.15rem}.two-columns{display:grid;grid-template-columns:1fr 1fr;gap:1rem}label{display:grid;gap:.45rem;font-size:.76rem;font-weight:800}input,select{width:100%;min-height:48px;padding:.7rem .8rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit}input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px}.payment-note{display:grid;gap:.35rem;margin:.5rem 0;padding:1rem 1.1rem;border-left:3px solid var(--gold);background:var(--paper)}.payment-note strong{font-size:.82rem}.payment-note span{color:var(--ink-soft);font-size:.75rem;line-height:1.5}button{min-height:54px;border:0;display:flex;align-items:center;justify-content:center;padding:.8rem 1.2rem;background:var(--ink);color:#fff;box-shadow:5px 5px 0 var(--gold);font-size:.8rem;font-weight:800;text-decoration:none;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.status{min-height:1.4rem;margin:0;color:#9a1837;font-size:.78rem;line-height:1.5}
+	aside{position:sticky;top:2rem;padding:1.5rem;background:var(--paper);border:1px solid var(--line)}aside h2{margin:0 0 1.3rem;font-size:1.6rem}:global(.summary-item){display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-bottom:1px solid var(--line);font-size:.75rem;line-height:1.4}:global(.summary-item span:last-child){white-space:nowrap;font-weight:800}.total{display:flex;justify-content:space-between;gap:1rem;padding:1.2rem 0 .6rem}.total strong{font-size:1.05rem}aside>p{margin:.5rem 0 0;color:var(--ink-soft);font-size:.7rem;line-height:1.5}
+	@media(max-width:760px){main{grid-template-columns:1fr}aside{position:static;grid-row:1}.checkout{grid-row:2}.two-columns{grid-template-columns:1fr}}
+	@media(max-width:520px){header,main{width:min(calc(100% - 1.5rem),1080px)}header img{height:2.1rem}}
+</style>
+
+<script>
+	import { chileRegions } from "../lib/chile";
+	import { formatMoney, getCart, lineItemTotal } from "../lib/cart-client";
+	import { medusa } from "../lib/medusa";
+
+	const form = document.querySelector<HTMLFormElement>("[data-checkout-form]")!;
+	const regionSelect = document.querySelector<HTMLSelectElement>("[data-region]")!;
+	const communeSelect = document.querySelector<HTMLSelectElement>("[data-commune]")!;
+	const status = document.querySelector<HTMLElement>("[data-status]")!;
+	const submit = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+	let cart = await getCart();
+
+	if (!cart?.items?.length) window.location.replace("/carro/");
+
+	for (const region of chileRegions) regionSelect.add(new Option(region.name, region.code.toLowerCase()));
+	regionSelect.addEventListener("change", () => {
+		communeSelect.innerHTML = '<option value="">Selecciona una comuna</option>';
+		const region = chileRegions.find((candidate) => candidate.code.toLowerCase() === regionSelect.value);
+		for (const commune of region?.communes ?? []) communeSelect.add(new Option(commune.name, commune.name));
+		communeSelect.disabled = !region;
+	});
+
+	const summaryItems = document.querySelector<HTMLElement>("[data-summary-items]")!;
+	const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" })[character] ?? character);
+	if (cart) {
+		summaryItems.innerHTML = (cart.items ?? []).map((item) => `<div class="summary-item"><span>${item.quantity} × ${escapeHtml(item.product_title ?? item.title)}</span><span>${formatMoney(lineItemTotal(item))}</span></div>`).join("");
+		document.querySelector<HTMLElement>("[data-summary-total]")!.textContent = formatMoney(cart.total);
+	}
+
+	form.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		if (!cart) return;
+		submit.disabled = true;
+		submit.textContent = "Preparando pago…";
+		status.textContent = "Guardando dirección y calculando despacho…";
+
+		try {
+			const data = new FormData(form);
+			const address = {
+				first_name: String(data.get("first_name")), last_name: String(data.get("last_name")),
+				address_1: String(data.get("address_1")), city: String(data.get("city")),
+				province: String(data.get("province")), postal_code: String(data.get("postal_code")),
+				country_code: "cl", phone: String(data.get("phone")),
+			};
+			cart = (await medusa.store.cart.update(cart.id, { email: String(data.get("email")), shipping_address: address, billing_address: address })).cart;
+			const { shipping_options } = await medusa.store.fulfillment.listCartOptions({ cart_id: cart.id });
+			if (!shipping_options.length) throw new Error("No encontramos un despacho disponible para esa región.");
+			cart = (await medusa.store.cart.addShippingMethod(cart.id, { option_id: shipping_options[0].id })).cart;
+			document.querySelector<HTMLElement>("[data-summary-total]")!.textContent = formatMoney(cart.total);
+			const { payment_providers } = await medusa.store.payment.listPaymentProviders({ region_id: cart.region_id! });
+			const provider = payment_providers.find((candidate) => candidate.id === "pp_mercadopago_mercadopago");
+			if (!provider) throw new Error("Mercado Pago todavía no está habilitado para la tienda.");
+			const { payment_collection } = await medusa.store.payment.initiatePaymentSession(
+				cart,
+				{ provider_id: provider.id },
+				{ fields: "*payment_sessions" },
+			);
+			const session = payment_collection.payment_sessions?.find((candidate) => candidate.provider_id === provider.id);
+			const paymentUrl = session?.data?.init_point ?? session?.data?.sandbox_init_point;
+			if (typeof paymentUrl !== "string") throw new Error("Mercado Pago no devolvió el enlace para pagar.");
+
+			window.location.assign(paymentUrl);
+		} catch (error) {
+			status.textContent = error instanceof Error ? error.message : "No pudimos iniciar el pago.";
+			submit.disabled = false;
+			submit.textContent = "Ir a pagar";
+		}
+	});
+</script>

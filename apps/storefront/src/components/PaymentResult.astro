@@ -1,0 +1,107 @@
+---
+type Props = {
+	mode: "success" | "pending" | "failure";
+};
+
+const { mode } = Astro.props;
+const content = {
+	success: {
+		eyebrow: "Pago recibido",
+		title: "Estamos confirmando tu compra",
+		message: "Espera un momento mientras registramos tu pedido.",
+	},
+	pending: {
+		eyebrow: "Pago pendiente",
+		title: "Tu pago está en proceso",
+		message: "Registraremos el pedido y te avisaremos cuando Mercado Pago confirme el pago.",
+	},
+	failure: {
+		eyebrow: "Pago no realizado",
+		title: "No pudimos completar el pago",
+		message: "Tu carro sigue guardado. Puedes volver al checkout e intentarlo otra vez.",
+	},
+}[mode];
+---
+
+<!doctype html>
+<html lang="es-CL">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="description" content="Estado del pago en Es Por Fé." />
+		<link rel="icon" type="image/png" href="/brand/favicon-esporfe.png" />
+		<title>{content.title} | Es Por Fé</title>
+	</head>
+	<body>
+		<header><a href="/" aria-label="Es Por Fé, inicio"><img src="/brand/logo-esporfe-transparent.png" alt="" width="1133" height="473" /></a></header>
+		<main data-payment-result data-mode={mode}>
+			<p class="eyebrow">{content.eyebrow}</p>
+			<h1 data-title>{content.title}</h1>
+			<p data-message>{content.message}</p>
+			<div class="loader" data-loader hidden aria-hidden="true"></div>
+			<p class="status" data-status role="status" aria-live="polite"></p>
+			<p class="order" data-order hidden>Pedido <strong data-order-number></strong></p>
+			<div class="actions">
+				<a href="/checkout/" data-retry>Volver al checkout</a>
+				<a href="/" class="secondary">Ir al inicio</a>
+			</div>
+		</main>
+	</body>
+</html>
+
+<style>
+	:global(:root){--ink:#351c31;--ink-soft:#66505f;--cream:#f7f2e9;--paper:#fffdf8;--pink:#c000a2;--gold:#ef8edb;--line:rgba(53,28,49,.18);font-family:Inter,Avenir,"Segoe UI",sans-serif;color:var(--ink);background:var(--cream)}
+	:global(*){box-sizing:border-box}:global(body){margin:0}:global(a){color:inherit}header{width:min(calc(100% - 2.5rem),1080px);min-height:84px;display:flex;align-items:center;margin:0 auto;border-bottom:1px solid var(--line)}header img{width:auto;height:2.5rem;display:block}main{width:min(calc(100% - 2.5rem),720px);margin:clamp(3rem,10vw,8rem) auto;padding:clamp(2rem,7vw,5rem);background:var(--paper);border:1px solid var(--line);text-align:center}.eyebrow{margin:0 0 1rem;color:var(--pink);font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{max-width:580px;margin:0 auto 1.2rem;font-family:Georgia,serif;font-size:clamp(2.6rem,7vw,5rem);font-weight:500;letter-spacing:-.045em;line-height:.98}main>p:not(.eyebrow,.status,.order){max-width:520px;margin:0 auto;color:var(--ink-soft);line-height:1.7}.status{min-height:1.4rem;margin:1rem 0;color:var(--ink-soft);font-size:.8rem}.order{margin:1rem 0 0}.loader{width:28px;height:28px;margin:1.5rem auto 0;border:3px solid var(--line);border-top-color:var(--pink);border-radius:50%;animation:spin .8s linear infinite}.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:.8rem;margin-top:2rem}.actions a{min-height:50px;display:flex;align-items:center;justify-content:center;padding:.8rem 1.3rem;background:var(--ink);color:#fff;box-shadow:4px 4px 0 var(--gold);font-size:.78rem;font-weight:800;text-decoration:none}.actions .secondary{background:transparent;color:var(--ink);box-shadow:none;border:1px solid var(--line)}@keyframes spin{to{transform:rotate(360deg)}}
+	@media(max-width:520px){header,main{width:min(calc(100% - 1.5rem),720px)}header img{height:2.1rem}.actions{display:grid}.actions a{width:100%}}
+</style>
+
+<script>
+	import { clearCartId, getCart } from "../lib/cart-client";
+	import { medusa } from "../lib/medusa";
+
+	const root = document.querySelector<HTMLElement>("[data-payment-result]")!;
+	const mode = root.dataset.mode;
+	const status = document.querySelector<HTMLElement>("[data-status]")!;
+	const loader = document.querySelector<HTMLElement>("[data-loader]")!;
+	const retry = document.querySelector<HTMLElement>("[data-retry]")!;
+
+	const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+	async function completeOrder() {
+		const cart = await getCart();
+		if (!cart) {
+			status.textContent = "No encontramos un carro pendiente en este navegador.";
+			return;
+		}
+
+		loader.hidden = false;
+		retry.hidden = true;
+		status.textContent = "Confirmando el pago con Mercado Pago…";
+
+		for (let attempt = 0; attempt < 4; attempt += 1) {
+			try {
+				const result = await medusa.store.cart.complete(cart.id);
+				if (result.type === "order") {
+					clearCartId();
+					loader.hidden = true;
+					document.querySelector<HTMLElement>("[data-title]")!.textContent = mode === "pending" ? "Tu pedido quedó registrado" : "¡Gracias por tu compra!";
+					document.querySelector<HTMLElement>("[data-message]")!.textContent = mode === "pending" ? "Te avisaremos por correo cuando Mercado Pago confirme el pago." : "Recibirás la información de seguimiento por correo.";
+					status.textContent = "";
+					const order = document.querySelector<HTMLElement>("[data-order]")!;
+					order.hidden = false;
+					document.querySelector<HTMLElement>("[data-order-number]")!.textContent = String(result.order.display_id ?? result.order.id);
+					return;
+				}
+			} catch {
+				// Mercado Pago puede tardar unos segundos en publicar el pago para conciliación.
+			}
+			await wait(1200 * (attempt + 1));
+		}
+
+		loader.hidden = true;
+		retry.hidden = false;
+		status.textContent = "Aún no pudimos confirmar el pago. Tu carro está guardado; vuelve a intentarlo en unos momentos.";
+	}
+
+	if (mode !== "failure") void completeOrder();
+</script>

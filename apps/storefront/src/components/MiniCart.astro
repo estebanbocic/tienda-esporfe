@@ -1,0 +1,84 @@
+<dialog class="mini-cart" data-mini-cart aria-labelledby="mini-cart-title">
+	<div class="mini-cart-header">
+		<div>
+			<p>Agregado correctamente</p>
+			<h2 id="mini-cart-title">Tu carro</h2>
+		</div>
+		<button class="close" type="button" data-mini-cart-close aria-label="Cerrar carro">×</button>
+	</div>
+
+	<div class="mini-cart-items" data-mini-cart-items></div>
+
+	<div class="mini-cart-footer">
+		<div class="mini-cart-total">
+			<span>Subtotal</span>
+			<strong data-mini-cart-total>$0</strong>
+		</div>
+		<a class="checkout-action" href="/checkout/">Ir a pagar</a>
+		<a class="cart-action" href="/carro/">Ver y editar carro</a>
+		<button class="continue-action" type="button" data-mini-cart-close>Seguir comprando</button>
+	</div>
+</dialog>
+
+<style>
+	.mini-cart {
+		width: min(100%, 430px); height: 100dvh; max-height: none; margin: 0 0 0 auto;
+		padding: 0; border: 0; background: #fffdf8; color: #351c31;
+		box-shadow: -18px 0 60px rgba(53, 28, 49, 0.2);
+	}
+	.mini-cart[open] { display: grid; grid-template-rows: auto 1fr auto; }
+	.mini-cart::backdrop { background: rgba(53, 28, 49, 0.48); backdrop-filter: blur(2px); }
+	.mini-cart-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.5rem; border-bottom: 1px solid rgba(53, 28, 49, 0.18); }
+	.mini-cart-header p { margin: 0 0 0.35rem; color: #c000a2; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+	.mini-cart-header h2 { margin: 0; font-family: Georgia, serif; font-size: 1.8rem; font-weight: 500; }
+	.close { width: 2.5rem; aspect-ratio: 1; border: 1px solid rgba(53, 28, 49, 0.18); background: transparent; color: inherit; font-size: 1.6rem; line-height: 1; cursor: pointer; }
+	.mini-cart-items { overflow-y: auto; padding: 0 1.5rem; }
+	:global(.mini-cart-item) { display: grid; grid-template-columns: 72px 1fr auto; gap: 0.9rem; align-items: center; padding: 1.2rem 0; border-bottom: 1px solid rgba(53, 28, 49, 0.14); }
+	:global(.mini-cart-item img) { width: 72px; height: 72px; padding: 0.35rem; object-fit: contain; background: #eee7dc; }
+	:global(.mini-cart-item h3) { margin: 0 0 0.35rem; font-family: Georgia, serif; font-size: 0.95rem; font-weight: 500; line-height: 1.25; }
+	:global(.mini-cart-item p) { margin: 0; color: #66505f; font-size: 0.7rem; }
+	:global(.mini-cart-item strong) { font-size: 0.76rem; white-space: nowrap; }
+	.mini-cart-footer { padding: 1.5rem; border-top: 1px solid rgba(53, 28, 49, 0.18); background: #f7f2e9; }
+	.mini-cart-total { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; font-size: 0.9rem; }
+	.checkout-action, .cart-action, .continue-action { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; padding: 0.7rem 1rem; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
+	.checkout-action { background: #351c31; color: white; box-shadow: 4px 4px 0 #ef8edb; text-decoration: none; }
+	.cart-action { margin-top: 0.8rem; border: 1px solid #351c31; color: #351c31; text-decoration: none; }
+	.continue-action { margin-top: 0.35rem; border: 0; background: transparent; color: #66505f; text-decoration: underline; text-underline-offset: 0.25em; }
+	@media (max-width: 480px) { .mini-cart { width: 92%; } }
+</style>
+
+<script>
+	import { formatMoney, lineItemTotal, type StoreCart } from "../lib/cart-client";
+
+	const dialog = document.querySelector<HTMLDialogElement>("[data-mini-cart]");
+	const itemsElement = dialog?.querySelector<HTMLElement>("[data-mini-cart-items]");
+	const totalElement = dialog?.querySelector<HTMLElement>("[data-mini-cart-total]");
+	const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" })[character] ?? character);
+
+	function openMiniCart(cart: StoreCart) {
+		if (!dialog || !itemsElement || !totalElement) return;
+
+		itemsElement.innerHTML = (cart.items ?? []).map((item) => `
+			<article class="mini-cart-item">
+				<img src="${escapeHtml(item.thumbnail ?? "/favicon.svg")}" alt="" width="72" height="72">
+				<div>
+					<h3>${escapeHtml(item.product_title ?? item.title)}</h3>
+					<p>Cantidad: ${item.quantity}</p>
+				</div>
+				<strong>${formatMoney(lineItemTotal(item))}</strong>
+			</article>`).join("");
+		totalElement.textContent = formatMoney(cart.subtotal);
+		if (!dialog.open) dialog.showModal();
+	}
+
+	document.addEventListener("esporfe:cart-updated", (event) => {
+		openMiniCart((event as CustomEvent<StoreCart>).detail);
+	});
+
+	dialog?.querySelectorAll<HTMLButtonElement>("[data-mini-cart-close]").forEach((button) => {
+		button.addEventListener("click", () => dialog.close());
+	});
+	dialog?.addEventListener("click", (event) => {
+		if (event.target === dialog) dialog.close();
+	});
+</script>
